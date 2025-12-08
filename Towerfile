@@ -1,12 +1,16 @@
 [app]
 name = "discord-mirror"
 script = "main.py"
-source = ["main.py", "pyproject.toml", "uv.lock"]
+source = [
+    "main.py",
+    "pyproject.toml",
+    "uv.lock",
+]
 schedule = ""
 description = "Mirror Discord messages to Slack"
 import_paths = []
 
-[[params]]
+[[parameters]]
 name = "DISCORD_CHANNEL_IDS"
 description = "Comma-separated list of Discord channel IDs to mirror"
-required = true
+default = ""
