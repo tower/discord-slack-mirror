@@ -7,17 +7,24 @@ from tower.tower_api_client.api.default import list_runs
 from tower.tower_api_client.models.list_runs_status_item import ListRunsStatusItem
 
 
+def get_tower_api_url():
+    """Get Tower API URL, ensuring /v1 suffix is present"""
+    tower_api_url = os.getenv("TOWER_URL", "https://api.tower.dev")
+    if not tower_api_url.endswith("/v1"):
+        tower_api_url = tower_api_url.rstrip("/") + "/v1"
+    return tower_api_url
+
+
 def get_last_successful_run_time(app_name, environment):
     """Get the end time of the last successful run"""
-    tower_api_url = os.getenv("TOWER_API_URL", "https://api.tower.dev")
+    fallback_mins = 5
     tower_token = os.getenv("TOWER_API_KEY")
 
-    fallback_mins=5
     if not tower_token:
         print(f"Warning: TOWER_API_KEY not set, using {fallback_mins}-minute lookback")
         return datetime.now(timezone.utc) - timedelta(minutes=fallback_mins)
 
-    client = AuthenticatedClient(base_url=tower_api_url, token=tower_token)
+    client = AuthenticatedClient(base_url=get_tower_api_url(), token=tower_token)
 
     try:
         response = list_runs.sync(
