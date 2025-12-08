@@ -15,11 +15,12 @@ The app automatically prevents duplicate messages by checking the Tower API for 
 5. Enable "Message Content Intent" in the Bot settings
 6. Invite the bot to your server with appropriate permissions (Read Messages, Read Message History)
 
-### 2. Get Discord Channel ID
+### 2. Get Discord Channel IDs
 
 1. Enable Developer Mode in Discord (Settings -> Advanced -> Developer Mode)
-2. Right-click on the channel you want to mirror
+2. Right-click on each channel you want to mirror
 3. Click "Copy ID"
+4. You can mirror multiple channels by providing a comma-separated list of IDs
 
 ### 3. Create a Slack Webhook
 
@@ -54,8 +55,11 @@ tower run
 
 ## Configuration
 
-The app uses the following environment variables, you should populate them in your tower secrets:
+The app uses the following configuration:
 
+**Secrets** (store with `tower secrets create`):
 - `DISCORD_BOT_TOKEN` - Discord bot authentication token
-- `DISCORD_CHANNEL_ID` - Discord channel ID to fetch messages from
 - `SLACK_WEBHOOK_URL` - Slack webhook URL to post messages to
+
+**Parameters** (pass at runtime):
+- `DISCORD_CHANNEL_IDS` - Comma-separated list of Discord channel IDs to fetch messages from (e.g., `123456789,987654321`)

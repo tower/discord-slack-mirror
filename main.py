@@ -80,13 +80,15 @@ def post_to_slack(webhook_url, messages):
         author = msg.get("author", {}).get("username", "Unknown")
         content = msg.get("content", "")
         timestamp = msg.get("timestamp", "")
+        channel_name = msg.get("_channel_name", "")
 
         if content:
+            header = f"*{author}* in #{channel_name}" if channel_name else f"*{author}*"
             blocks.append({
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*{author}* ({timestamp}):\n{content}"
+                    "text": f"{header} ({timestamp}):\n{content}"
                 }
             })
             blocks.append({"type": "divider"})
@@ -98,31 +100,62 @@ def post_to_slack(webhook_url, messages):
         print(f"Posted {len(messages)} messages to Slack")
 
 
+def get_channel_name(channel_id, token):
+    """Fetch the channel name from Discord API"""
+    url = f"https://discord.com/api/v10/channels/{channel_id}"
+    headers = {"Authorization": f"Bot {token}"}
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        channel = response.json()
+        return channel.get("name", channel_id)
+    except Exception:
+        return channel_id
+
+
 def main():
     """Mirror Discord messages to Slack"""
     discord_token = os.getenv("DISCORD_BOT_TOKEN")
-    discord_channel_id = os.getenv("DISCORD_CHANNEL_ID")
+    discord_channel_ids = os.getenv("DISCORD_CHANNEL_IDS", "")
     slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL")
     environment = os.getenv("TOWER_ENVIRONMENT", "default")
 
     if not discord_token:
         print("Error: DISCORD_BOT_TOKEN environment variable not set")
         sys.exit(1)
-    if not discord_channel_id:
-        print("Error: DISCORD_CHANNEL_ID environment variable not set")
+    if not discord_channel_ids:
+        print("Error: DISCORD_CHANNEL_IDS environment variable not set")
         sys.exit(1)
     if not slack_webhook_url:
         print("Error: SLACK_WEBHOOK_URL environment variable not set")
         sys.exit(1)
 
-    since = get_last_successful_run_time("discord-mirror", environment)
-    print(f"Fetching messages from Discord channel: {discord_channel_id} since {since}")
-    messages = get_discord_messages(discord_channel_id, discord_token, since=since)
-    print(f"Found {len(messages)} new messages")
+    channel_ids = [cid.strip() for cid in discord_channel_ids.split(",") if cid.strip()]
 
-    if messages:
-        print(f"Posting to Slack...")
-        post_to_slack(slack_webhook_url, messages)
+    if not channel_ids:
+        print("Error: No valid channel IDs provided")
+        sys.exit(1)
+
+    since = get_last_successful_run_time("discord-mirror", environment)
+    print(f"Fetching messages since {since}")
+
+    all_messages = []
+    for channel_id in channel_ids:
+        channel_name = get_channel_name(channel_id, discord_token)
+        print(f"Fetching from #{channel_name} ({channel_id})...")
+        messages = get_discord_messages(channel_id, discord_token, since=since)
+        for msg in messages:
+            msg["_channel_name"] = channel_name
+        all_messages.extend(messages)
+        print(f"  Found {len(messages)} new messages")
+
+    all_messages.sort(key=lambda m: m.get("timestamp", ""))
+    print(f"Total: {len(all_messages)} new messages across {len(channel_ids)} channels")
+
+    if all_messages:
+        print("Posting to Slack...")
+        post_to_slack(slack_webhook_url, all_messages)
         print("Done!")
     else:
         print("No new messages to post")
