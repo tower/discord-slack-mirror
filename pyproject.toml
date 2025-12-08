@@ -1,0 +1,10 @@
+[project]
+name = "discord-mirror"
+version = "0.1.0"
+description = "Mirror Discord messages to Slack"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.31.0",
+    "tower>=0.3.0",
+]
