@@ -41,9 +41,7 @@ Run every 5 minutes:
 ```bash
 tower schedules create \
   --app discord-mirror \
-  --cron "*/5 * * * *" \
-  --parameter DISCORD_CHANNEL_ID=<your-channel-id> \
-  --parameter SLACK_WEBHOOK_URL=<your-webhook-url>
+  --cron "*/5 * * * *"
 ```
 
 ## Manual Testing
@@ -51,15 +49,13 @@ tower schedules create \
 Test the app manually before scheduling:
 
 ```bash
-tower run \
-  --parameter DISCORD_CHANNEL_ID=<your-channel-id> \
-  --parameter SLACK_WEBHOOK_URL=<your-webhook-url>
+tower run
 ```
 
 ## Configuration
 
-The app uses the following environment variables:
+The app uses the following environment variables, you should populate them in your tower secrets:
 
-- `DISCORD_BOT_TOKEN` (secret) - Discord bot authentication token
-- `DISCORD_CHANNEL_ID` (parameter) - Discord channel ID to fetch messages from
-- `SLACK_WEBHOOK_URL` (parameter) - Slack webhook URL to post messages to
+- `DISCORD_BOT_TOKEN` - Discord bot authentication token
+- `DISCORD_CHANNEL_ID` - Discord channel ID to fetch messages from
+- `SLACK_WEBHOOK_URL` - Slack webhook URL to post messages to
