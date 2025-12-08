@@ -51,12 +51,20 @@ def get_last_successful_run_time(app_name, environment):
 
 
 def get_discord_messages(channel_id, token, since=None, limit=100):
-    """Fetch recent messages from Discord channel"""
+    """Fetch recent messages from Discord channel. Returns empty list if channel is inaccessible."""
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {"Authorization": f"Bot {token}"}
     params = {"limit": limit}
 
     response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code == 403:
+        print(f"  Warning: No permission to read channel {channel_id}, skipping")
+        return []
+    if response.status_code == 404:
+        print(f"  Warning: Channel {channel_id} not found, skipping")
+        return []
+
     response.raise_for_status()
     messages = response.json()
 
@@ -101,12 +109,14 @@ def post_to_slack(webhook_url, messages):
 
 
 def get_channel_name(channel_id, token):
-    """Fetch the channel name from Discord API"""
+    """Fetch the channel name from Discord API. Returns channel_id if inaccessible."""
     url = f"https://discord.com/api/v10/channels/{channel_id}"
     headers = {"Authorization": f"Bot {token}"}
 
     try:
         response = requests.get(url, headers=headers)
+        if response.status_code in (403, 404):
+            return channel_id
         response.raise_for_status()
         channel = response.json()
         return channel.get("name", channel_id)
