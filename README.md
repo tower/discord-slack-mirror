@@ -17,14 +17,14 @@ The app automatically prevents duplicate messages by checking the Tower API for 
 
 ### 2. Get Discord Channel ID
 
-1. Enable Developer Mode in Discord (Settings � Advanced � Developer Mode)
+1. Enable Developer Mode in Discord (Settings -> Advanced -> Developer Mode)
 2. Right-click on the channel you want to mirror
 3. Click "Copy ID"
 
 ### 3. Create a Slack Webhook
 
 1. Go to your Slack workspace settings
-2. Navigate to Apps � Incoming Webhooks
+2. Navigate to Apps -> Incoming Webhooks
 3. Create a new webhook for the target channel
 4. Copy the webhook URL
 
