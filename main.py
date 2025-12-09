@@ -20,8 +20,10 @@ def discord_to_slack_markdown(content, mentions=None):
             content = re.sub(rf"<?@!?{user_id}>?", f"@{name}", content)
     # Links: [text](url) -> <url|text>
     content = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"<\2|\1>", content)
-    # Bold: **text** -> *text*
-    content = re.sub(r"\*\*(.+?)\*\*", r"*\1*", content)
+    # Bold/italic: ***text*** -> *_text_*, **text** -> *text*, *text* -> _text_
+    content = re.sub(r"\*{3}(.+?)\*{3}", r"*_\1_*", content)
+    content = re.sub(r"\*{2}(.+?)\*{2}", r"*\1*", content)
+    content = re.sub(r"\*(.+?)\*", r"_\1_", content)
     # Strikethrough: ~~text~~ -> ~text~
     content = re.sub(r"~~(.+?)~~", r"~\1~", content)
     # Custom emoji: <:name:id> -> :name:
