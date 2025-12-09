@@ -8,10 +8,16 @@ from tower.tower_api_client.api.default import list_runs
 from tower.tower_api_client.models.list_runs_status_item import ListRunsStatusItem
 
 
-def discord_to_slack_markdown(content):
+def discord_to_slack_markdown(content, mentions=None):
     """Convert Discord markdown to Slack mrkdwn format"""
     if not content:
         return content
+    # User mentions: <@userid> -> @username
+    if mentions:
+        for user in mentions:
+            user_id = user.get("id")
+            name = user.get("global_name") or user.get("username", user_id)
+            content = re.sub(rf"<?@!?{user_id}>?", f"@{name}", content)
     # Links: [text](url) -> <url|text>
     content = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"<\2|\1>", content)
     # Bold: **text** -> *text*
@@ -108,7 +114,7 @@ def post_to_slack(webhook_url, messages):
             or author_data.get("global_name")
             or author_data.get("username", "Unknown")
         )
-        content = discord_to_slack_markdown(msg.get("content", ""))
+        content = discord_to_slack_markdown(msg.get("content", ""), msg.get("mentions"))
         timestamp = msg.get("timestamp", "")
         channel_name = msg.get("_channel_name", "")
 
