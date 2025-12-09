@@ -85,7 +85,13 @@ def post_to_slack(webhook_url, messages):
 
     blocks = []
     for msg in reversed(messages):
-        author = msg.get("author", {}).get("username", "Unknown")
+        author_data = msg.get("author", {})
+        member_data = msg.get("member", {})
+        author = (
+            member_data.get("nick")
+            or author_data.get("global_name")
+            or author_data.get("username", "Unknown")
+        )
         content = msg.get("content", "")
         timestamp = msg.get("timestamp", "")
         channel_name = msg.get("_channel_name", "")
