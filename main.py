@@ -1,10 +1,26 @@
 import os
+import re
 import sys
 import requests
 from datetime import datetime, timezone, timedelta
 from tower.tower_api_client import AuthenticatedClient
 from tower.tower_api_client.api.default import list_runs
 from tower.tower_api_client.models.list_runs_status_item import ListRunsStatusItem
+
+
+def discord_to_slack_markdown(content):
+    """Convert Discord markdown to Slack mrkdwn format"""
+    if not content:
+        return content
+    # Links: [text](url) -> <url|text>
+    content = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"<\2|\1>", content)
+    # Bold: **text** -> *text*
+    content = re.sub(r"\*\*(.+?)\*\*", r"*\1*", content)
+    # Strikethrough: ~~text~~ -> ~text~
+    content = re.sub(r"~~(.+?)~~", r"~\1~", content)
+    # Custom emoji: <:name:id> -> :name:
+    content = re.sub(r"<a?:([^:]+):\d+>", r":\1:", content)
+    return content
 
 
 def get_tower_api_url():
@@ -92,7 +108,7 @@ def post_to_slack(webhook_url, messages):
             or author_data.get("global_name")
             or author_data.get("username", "Unknown")
         )
-        content = msg.get("content", "")
+        content = discord_to_slack_markdown(msg.get("content", ""))
         timestamp = msg.get("timestamp", "")
         channel_name = msg.get("_channel_name", "")
 
