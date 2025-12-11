@@ -101,64 +101,97 @@ def get_discord_messages(channel_id, token, since=None, limit=100):
     return messages
 
 
+def get_author_name(msg):
+    """Extract display name from message."""
+    member = msg.get("member", {})
+    author = msg.get("author", {})
+    return member.get("nick") or author.get("global_name") or author.get("username", "Unknown")
+
+
+def get_discord_url(msg):
+    """Build Discord message URL if possible."""
+    if {"guild_id", "channel_id", "id"} <= msg.keys():
+        return f"https://discord.com/channels/{msg['guild_id']}/{msg['channel_id']}/{msg['id']}"
+    return None
+
+
+def get_reply_info(msg):
+    """Get reply info (name, url) if this is a reply."""
+    if msg.get("type") != 19:
+        return None, None
+    ref = msg.get("referenced_message")
+    if not ref:
+        return None, None
+    author = ref.get("author", {})
+    name = author.get("global_name") or author.get("username", "someone")
+    url = get_discord_url(ref) if ref.get("id") else None
+    return name, url
+
+
+def message_to_blocks(msg):
+    """Convert a Discord message to Slack blocks."""
+    content = discord_to_slack_markdown(msg.get("content", ""), msg.get("mentions"))
+    if not content:
+        return []
+
+    author = get_author_name(msg)
+    channel_name = msg.get("_channel_name", "")
+    dt = datetime.fromisoformat(msg["timestamp"])
+    timestamp = dt.strftime("%Y-%m-%d %H:%M")
+
+    header = f"*{author}* in #{channel_name} `{timestamp}`" if channel_name else f"*{author}* `{timestamp}`"
+
+    # Main section with optional View button
+    section = {"type": "section", "text": {"type": "mrkdwn", "text": f"{header}:\n{content}"}}
+    url = get_discord_url(msg)
+    if url:
+        section["accessory"] = {"type": "button", "text": {"type": "plain_text", "text": "View in Discord"}, "url": url}
+
+    blocks = [section]
+
+    # Context line for replies (U+FE0E forces text presentation)
+    reply_name, reply_url = get_reply_info(msg)
+    if reply_name:
+        name_link = f"<{reply_url}|*{reply_name}*>" if reply_url else f"*{reply_name}*"
+        blocks.append({
+            "type": "context",
+            "elements": [{"type": "mrkdwn", "text": f"↩\uFE0E reply to {name_link}"}]
+        })
+
+    blocks.append({"type": "divider"})
+    return blocks
+
+
 def post_to_slack(webhook_url, messages):
-    """Post messages to Slack channel"""
+    """Post messages to Slack channel."""
     if not messages:
         print("No messages to post")
         return
 
     blocks = []
     for msg in messages:
-        author_data = msg.get("author", {})
-        member_data = msg.get("member", {})
-        author = (
-            member_data.get("nick")
-            or author_data.get("global_name")
-            or author_data.get("username", "Unknown")
-        )
-        content = discord_to_slack_markdown(msg.get("content", ""), msg.get("mentions"))
-        dt = datetime.fromisoformat(msg["timestamp"])
-        timestamp = dt.strftime("%Y-%m-%d %H:%M")
-        channel_name = msg.get("_channel_name", "")
-
-        if {"guild_id", "channel_id", "id"} <= msg.keys():
-            discord_url = f"https://discord.com/channels/{msg['guild_id']}/{msg['channel_id']}/{msg['id']}"
-            timestamp_link = f"<{discord_url}|{timestamp}>"
-        else:
-            timestamp_link = timestamp
-
-        if content:
-            header = f"*{author}* in #{channel_name}" if channel_name else f"*{author}*"
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"{header} ({timestamp_link}):\n{content}"
-                }
-            })
-            blocks.append({"type": "divider"})
+        blocks.extend(message_to_blocks(msg))
 
     if blocks:
-        payload = {"blocks": blocks}
-        response = requests.post(webhook_url, json=payload)
+        response = requests.post(webhook_url, json={"blocks": blocks})
         response.raise_for_status()
         print(f"Posted {len(messages)} messages to Slack")
 
 
-def get_channel_name(channel_id, token):
-    """Fetch the channel name from Discord API. Returns channel_id if inaccessible."""
+def get_channel_info(channel_id, token):
+    """Fetch channel info from Discord API. Returns (name, guild_id) or (channel_id, None) if inaccessible."""
     url = f"https://discord.com/api/v10/channels/{channel_id}"
     headers = {"Authorization": f"Bot {token}"}
 
     try:
         response = requests.get(url, headers=headers)
         if response.status_code in (403, 404):
-            return channel_id
+            return channel_id, None
         response.raise_for_status()
         channel = response.json()
-        return channel.get("name", channel_id)
+        return channel.get("name", channel_id), channel.get("guild_id")
     except Exception:
-        return channel_id
+        return channel_id, None
 
 
 def main():
@@ -189,11 +222,12 @@ def main():
 
     all_messages = []
     for channel_id in channel_ids:
-        channel_name = get_channel_name(channel_id, discord_token)
+        channel_name, guild_id = get_channel_info(channel_id, discord_token)
         print(f"Fetching from #{channel_name} ({channel_id})...")
         messages = get_discord_messages(channel_id, discord_token, since=since)
         for msg in messages:
             msg["_channel_name"] = channel_name
+            msg["guild_id"] = guild_id
         all_messages.extend(messages)
         print(f"  Found {len(messages)} new messages")
 
