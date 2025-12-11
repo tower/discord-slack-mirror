@@ -138,9 +138,8 @@ def message_to_blocks(msg):
     author = get_author_name(msg)
     channel_name = msg.get("_channel_name", "")
     dt = datetime.fromisoformat(msg["timestamp"])
-    timestamp = dt.strftime("%H:%M")
 
-    header = f"[{timestamp}] *{author}* in #{channel_name}" if channel_name else f"[{timestamp}] *{author}*"
+    header = f"[<!date^{dt}^\{time\}>|{timestamp}] *{author}* in #{channel_name}" if channel_name else f"[{timestamp}] *{author}*"
 
     # Main section with optional View button
     section = {"type": "section", "text": {"type": "mrkdwn", "text": f"{header}:\n{content}"}}
@@ -158,7 +157,7 @@ def message_to_blocks(msg):
 
     blocks.append({
         "type": "context",
-        "elements": [{"type": "mrkdwn", "text": f"{reply_string}{dt}"}]
+        "elements": [{"type": "mrkdwn", "text": f"{reply_string}\t\t\t\t{dt}"}]
     })
 
     blocks.append({"type": "divider"})
