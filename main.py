@@ -95,7 +95,7 @@ def get_discord_messages(channel_id, token, since=None, limit=100):
     if since:
         messages = [
             msg for msg in messages
-            if datetime.fromisoformat(msg["timestamp"].replace("Z", "+00:00")) > since
+            if datetime.fromisoformat(msg["timestamp"]) > since
         ]
 
     return messages
