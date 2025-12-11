@@ -121,13 +121,19 @@ def post_to_slack(webhook_url, messages):
         timestamp = dt.strftime("%Y-%m-%d %H:%M")
         channel_name = msg.get("_channel_name", "")
 
+        if {"guild_id", "channel_id", "id"} <= msg.keys():
+            discord_url = f"https://discord.com/channels/{msg['guild_id']}/{msg['channel_id']}/{msg['id']}"
+            timestamp_link = f"<{discord_url}|{timestamp}>"
+        else:
+            timestamp_link = timestamp
+
         if content:
             header = f"*{author}* in #{channel_name}" if channel_name else f"*{author}*"
             blocks.append({
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"{header} ({timestamp}):\n{content}"
+                    "text": f"{header} ({timestamp_link}):\n{content}"
                 }
             })
             blocks.append({"type": "divider"})
