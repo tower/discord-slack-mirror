@@ -124,6 +124,7 @@ def get_reply_info(msg):
         return None, None
     author = ref.get("author", {})
     name = author.get("global_name") or author.get("username", "someone")
+    ref["guild_id"] = msg["guild_id"]
     url = get_discord_url(ref) if ref.get("id") else None
     return name, url
 
@@ -137,9 +138,9 @@ def message_to_blocks(msg):
     author = get_author_name(msg)
     channel_name = msg.get("_channel_name", "")
     dt = datetime.fromisoformat(msg["timestamp"])
-    timestamp = dt.strftime("%Y-%m-%d %H:%M")
+    timestamp = dt.strftime("%H:%M")
 
-    header = f"*{author}* in #{channel_name} `{timestamp}`" if channel_name else f"*{author}* `{timestamp}`"
+    header = f"[{timestamp}] *{author}* in #{channel_name}" if channel_name else f"[{timestamp}] *{author}*"
 
     # Main section with optional View button
     section = {"type": "section", "text": {"type": "mrkdwn", "text": f"{header}:\n{content}"}}
@@ -153,10 +154,12 @@ def message_to_blocks(msg):
     reply_name, reply_url = get_reply_info(msg)
     if reply_name:
         name_link = f"<{reply_url}|*{reply_name}*>" if reply_url else f"*{reply_name}*"
-        blocks.append({
-            "type": "context",
-            "elements": [{"type": "mrkdwn", "text": f"↩\uFE0E reply to {name_link}"}]
-        })
+        reply_string = f"reply to {name_link} ↩\uFE0E "
+
+    blocks.append({
+        "type": "context",
+        "elements": [{"type": "mrkdwn", "text": f"{reply_string}{dt}"}]
+    })
 
     blocks.append({"type": "divider"})
     return blocks
