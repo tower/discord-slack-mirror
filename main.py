@@ -141,7 +141,7 @@ def message_to_blocks(msg):
     unix_ts = int(dt.timestamp())
     fallback = dt.strftime("%H:%M %Z")
 
-    header = f"[<!date^{unix_ts}^{{time}}>|{fallback}] *{author}* in #{channel_name}" if channel_name else f"[{fallback}] *{author}*"
+    header = f"[<!date^{unix_ts}^{{time}}|{fallback}>] *{author}* in #{channel_name}" if channel_name else f"[<!date^{unix_ts}^{{time}}|{fallback}>] *{author}*"
 
     # Main section with optional View button
     section = {"type": "section", "text": {"type": "mrkdwn", "text": f"{header}:\n{content}"}}
@@ -153,6 +153,7 @@ def message_to_blocks(msg):
 
     # Context line for replies (U+FE0E forces text presentation)
     reply_name, reply_url = get_reply_info(msg)
+    reply_string = ""
     if reply_name:
         name_link = f"<{reply_url}|*{reply_name}*>" if reply_url else f"*{reply_name}*"
         reply_string = f"reply to {name_link} ↩\uFE0E "
