@@ -138,8 +138,10 @@ def message_to_blocks(msg):
     author = get_author_name(msg)
     channel_name = msg.get("_channel_name", "")
     dt = datetime.fromisoformat(msg["timestamp"])
+    unix_ts = int(dt.timestamp())
+    fallback = dt.strftime("%H:%M %Z")
 
-    header = f"[<!date^{dt}^{{time}}>|{timestamp}] *{author}* in #{channel_name}" if channel_name else f"[{timestamp}] *{author}*"
+    header = f"[<!date^{unix_ts}^{{time}}>|{fallback}] *{author}* in #{channel_name}" if channel_name else f"[{fallback}] *{author}*"
 
     # Main section with optional View button
     section = {"type": "section", "text": {"type": "mrkdwn", "text": f"{header}:\n{content}"}}
