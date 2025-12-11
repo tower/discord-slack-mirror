@@ -117,7 +117,8 @@ def post_to_slack(webhook_url, messages):
             or author_data.get("username", "Unknown")
         )
         content = discord_to_slack_markdown(msg.get("content", ""), msg.get("mentions"))
-        timestamp = msg.get("timestamp", "")
+        dt = datetime.fromisoformat(msg["timestamp"])
+        timestamp = dt.strftime("%Y-%m-%d %H:%M")
         channel_name = msg.get("_channel_name", "")
 
         if content:
