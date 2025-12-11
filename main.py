@@ -151,17 +151,14 @@ def message_to_blocks(msg):
 
     blocks = [section]
 
-    # Context line for replies (U+FE0E forces text presentation)
+    # Context line for replies only (U+FE0E forces text presentation)
     reply_name, reply_url = get_reply_info(msg)
-    reply_string = ""
     if reply_name:
         name_link = f"<{reply_url}|*{reply_name}*>" if reply_url else f"*{reply_name}*"
-        reply_string = f"reply to {name_link} ↩\uFE0E "
-
-    blocks.append({
-        "type": "context",
-        "elements": [{"type": "mrkdwn", "text": f"{reply_string}\t\t\t\t{dt}"}]
-    })
+        blocks.append({
+            "type": "context",
+            "elements": [{"type": "mrkdwn", "text": f"reply to {name_link} ↩\uFE0E"}]
+        })
 
     blocks.append({"type": "divider"})
     return blocks
